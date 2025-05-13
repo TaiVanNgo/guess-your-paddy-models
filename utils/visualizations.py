@@ -1,4 +1,5 @@
 # ============================IMPORT LIBRARIES============================
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -273,3 +274,79 @@ def plot_grouped_heatmap(
 
     plt.tight_layout()
     plt.show()
+
+
+def display_augmentation_examples(
+    original_df,
+    augmented_df,
+    tiers,
+    augmentations,
+):
+    """
+    Display examples of each type of augmentation applied to images from different variety tiers
+
+    Parameters:
+    - original_df: original DataFrame metadata
+    - augmented_df: augmented DataFrame metadata
+    - tiers: Dictionary mapping tier names to lists of variety names belonging to that tier
+    - augmentations: Dictionary mapping tier names to lists of augmentation types applied to that tier
+    """
+    for tier_name, varieties in tiers.items():
+        if not varieties:
+            continue
+
+        # Take the first variety in this tier
+        variety = varieties[0]
+
+        # Find an example image for this variety
+        sample_row = original_df[original_df["variety"] == variety].iloc[0]
+        original_image_id = sample_row["image_id"]
+        original_path = sample_row["image_path"]
+        base_name = os.path.splitext(original_image_id)[0]
+
+        print_header(f"Augmentation Examples for {tier_name} Tier - Variety: {variety}")
+
+        # For each augmentation type applied to this tier
+        aug_types = augmentations[tier_name]
+        num_augs = len(aug_types)
+
+        # Create a figure with 1 row for original + augmentations
+        fig, axes = plt.subplots(
+            1, num_augs + 1, figsize=(3 * (num_augs + 1), 4), facecolor="white"
+        )
+
+        # Display original image first
+        try:
+            original_img = mpimg.imread(original_path)
+            axes[0].imshow(original_img)
+            axes[0].set_title(f"Original", fontsize=10)
+            axes[0].axis("off")
+        except FileNotFoundError:
+            axes[0].text(0.5, 0.5, "Image not found", ha="center", va="center")
+            axes[0].axis("off")
+
+        # Display each augmentation type
+        for i, aug_type in enumerate(aug_types):
+            aug_image_id = f"{base_name}_{aug_type}.jpg"
+
+            aug_row = augmented_df[augmented_df["image_id"] == aug_image_id]
+
+            aug_path = aug_row.iloc[0]["image_path"]
+
+            try:
+                aug_img = mpimg.imread(aug_path)
+                axes[i + 1].imshow(aug_img)
+                axes[i + 1].set_title(f"{aug_type}", fontsize=10)
+                axes[i + 1].axis("off")
+            except FileNotFoundError:
+                axes[i + 1].text(
+                    0.5, 0.5, "Augmented image\nnot found", ha="center", va="center"
+                )
+                axes[i + 1].axis("off")
+
+        plt.suptitle(
+            f"{tier_name} Tier ({variety}): Original vs Augmentations", fontsize=16
+        )
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.85)
+        plt.show()
