@@ -24,8 +24,9 @@ from sklearn.metrics import (
 
 def save_sklearn_model(model, model_name, model_dir="models"):
     os.makedirs(model_dir, exist_ok=True)
-    model_path = os.path.join(model_dir, f"{model_name}.joblib")
-    joblib.dump(model, model_path)
+    model_path = os.path.join(model_dir, f"{model_name}.pkl")
+    with open(model_path, "wb") as f:
+        pickle.dump(model, f)
     print(f"Model saved to {model_path}")
 
 
@@ -36,7 +37,7 @@ def save_model_and_history(
     os.makedirs(history_dir, exist_ok=True)
 
     # Save model
-    model_path = os.path.join(model_dir, f"{model_name}.keras")
+    model_path = os.path.join(model_dir, f"{model_name}.h5")
     model.save(model_path)
 
     # Save training history
@@ -231,6 +232,18 @@ def analyze_model_layers(model, model_name):
         [layer.count_params() for layer in model.layers if layer.trainable]
     )
     print(f"\nTotal trainable parameters: {trainable_params:,}")
+
+
+def load_lambda_histories(history_dir="models/history"):
+    histories = {}
+
+    for filename in os.listdir(history_dir):
+        if filename.startswith("vgg_") and filename.endswith("lambda_history.pkl"):
+            model_name = filename.replace("_history.pkl", "")
+            with open(os.path.join(history_dir, filename), "rb") as f:
+                histories[model_name] = pickle.load(f)
+
+    return histories
 
 
 def plot_model_results(model_results, title="Model Comparison", figsize=(12, 8)):
