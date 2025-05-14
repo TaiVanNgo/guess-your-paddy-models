@@ -9,6 +9,7 @@ import joblib
 # Data preprocessing
 from sklearn.preprocessing import label_binarize
 import seaborn as sns
+
 # Sklearn Library
 from sklearn.metrics import (
     accuracy_score,
@@ -41,10 +42,10 @@ def save_model_and_history(
     # Save training history
     history_path = os.path.join(history_dir, f"{model_name}_history.pkl")
     with open(history_path, "wb") as f:
-        pickle.dump(history.history, f)
+        pickle.dump(history, f)
 
     print(f"Model saved to {model_path}")
-    print(f"History saved to {history_path}")
+    print(f"Full history saved to {history_path}")
 
 
 def evaluate_model(model, generator, model_name):
