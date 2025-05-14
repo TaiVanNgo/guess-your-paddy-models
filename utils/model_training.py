@@ -1,9 +1,11 @@
 # ============================IMPORT LIBRARIES============================
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Data preprocessing
 from sklearn.preprocessing import label_binarize
+import seaborn as sns
 
 # Sklearn Library
 from sklearn.metrics import (
@@ -200,3 +202,46 @@ def analyze_model_layers(model, model_name):
         [layer.count_params() for layer in model.layers if layer.trainable]
     )
     print(f"\nTotal trainable parameters: {trainable_params:,}")
+
+
+def plot_model_results(model_results, title="Model Comparison", figsize=(12, 8)):
+    """
+    Plots training and validation accuracies for multiple models side by side for easy comparison.
+
+    Parameters:
+    - model_results: Dictionary where keys are model names and values are tuples of (train_accuracy, val_accuracy)
+    - title: Title for the plot
+    - figsize: Figure size as (width, height)
+    """
+    # Create a DataFrame for easy plotting with seaborn
+    data = []
+    for model_name, (train_acc, val_acc) in model_results.items():
+        data.append({"Model": model_name, "Accuracy": train_acc, "Type": "Training"})
+        data.append({"Model": model_name, "Accuracy": val_acc, "Type": "Validation"})
+
+    # Convert to DataFrame for seaborn
+    plot_df = pd.DataFrame(data)
+
+    # Set up the figure
+    plt.figure(figsize=figsize)
+
+    # Create the grouped bar chart
+    ax = sns.barplot(
+        x="Model", y="Accuracy", hue="Type", data=plot_df, palette="coolwarm"
+    )
+
+    # Add value labels on top of each bar
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.4f", padding=3)
+
+    # Customize the plot
+    plt.title(title, fontsize=16)
+    plt.ylabel("Accuracy", fontsize=12)
+    plt.ylim(0, 1.05)  # Leave room for value labels
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
+    plt.legend(title="", loc="upper right")
+    plt.xticks(rotation=45 if len(model_results) > 3 else 0)
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.show()
