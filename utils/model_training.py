@@ -37,7 +37,7 @@ def save_model_and_history(
     os.makedirs(history_dir, exist_ok=True)
 
     # Save model
-    model_path = os.path.join(model_dir, f"{model_name}.h5")
+    model_path = os.path.join(model_dir, f"{model_name}.keras")
     model.save(model_path)
 
     # Save training history
