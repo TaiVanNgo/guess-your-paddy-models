@@ -1,12 +1,14 @@
 # ============================IMPORT LIBRARIES============================
+import os
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import joblib
 
 # Data preprocessing
 from sklearn.preprocessing import label_binarize
 import seaborn as sns
-
 # Sklearn Library
 from sklearn.metrics import (
     accuracy_score,
@@ -17,6 +19,32 @@ from sklearn.metrics import (
     roc_curve,
     auc,
 )
+
+
+def save_sklearn_model(model, model_name, model_dir="models"):
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, f"{model_name}.joblib")
+    joblib.dump(model, model_path)
+    print(f"Model saved to {model_path}")
+
+
+def save_model_and_history(
+    model, history, model_name, model_dir="models", history_dir="models/history"
+):
+    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(history_dir, exist_ok=True)
+
+    # Save model
+    model_path = os.path.join(model_dir, f"{model_name}.keras")
+    model.save(model_path)
+
+    # Save training history
+    history_path = os.path.join(history_dir, f"{model_name}_history.pkl")
+    with open(history_path, "wb") as f:
+        pickle.dump(history.history, f)
+
+    print(f"Model saved to {model_path}")
+    print(f"History saved to {history_path}")
 
 
 def evaluate_model(model, generator, model_name):
