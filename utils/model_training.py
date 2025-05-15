@@ -4,7 +4,9 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import joblib
+from PIL import Image
+import math
+import matplotlib.gridspec as gridspec
 
 # Data preprocessing
 from sklearn.preprocessing import label_binarize
@@ -47,6 +49,113 @@ def save_model_and_history(
 
     print(f"Model saved to {model_path}")
     print(f"Full history saved to {history_path}")
+
+
+def predict_and_show_samples(
+    model,
+    df,
+    class_names,
+    num_samples=5,
+    random_select=True,
+    target_size=(128, 128),
+    figsize=(15, 10),
+    rows=None,
+    cols=None,
+    label_col="label",
+    prediction_type="Disease",
+):
+    """
+    Predict and check correctness for images
+
+    model: Trained model
+    df: DataFrame with at least 'image_path' and 'label' columns
+    class_names: List of class names indexed by label index
+    num_samples: Number of images to predict
+    random_select: If True, randomly select images; otherwise use top rows
+    target_size: Target size to resize images
+    figsize: Figure size for the plot
+    rows: Number of rows for the grid (calculated automatically if None)
+    cols: Number of columns for the grid (calculated automatically if None)
+    label_col: Name of the column containing the label in the dataframe
+    prediction_type: Type of prediction (e.g., "Disease", "Variety", "Age")
+    """
+    if isinstance(class_names, tuple):
+        class_names = list(class_names)
+    
+    selected_df = (
+        df.sample(n=num_samples).reset_index(drop=True)
+        if random_select
+        else df.head(num_samples).reset_index(drop=True)
+    )
+
+    if rows is None or cols is None:
+        cols = min(4, num_samples)
+        rows = math.ceil(num_samples / cols)
+
+    # Create figure with grid
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(rows, cols, figure=fig)
+
+    images = []
+    predictions = []
+    true_labels = []
+    is_correct = []
+    confidence_scores = []
+
+    # Process all images and predictions
+    for i, row in selected_df.iterrows():
+        img_path = row["image_path"]
+        true_label_index = (
+            row[label_col]
+            if isinstance(row[label_col], int)
+            else class_names.index(row[label_col])
+        )
+
+        # Load & process images
+        img = Image.open(img_path).convert("RGB")
+        img_resized = img.resize(target_size)
+        img_array = np.array(img_resized) / 255.0
+        img_batch = np.expand_dims(img_array, axis=0)
+
+        # Predictions
+        prediction = model.predict(img_batch, verbose=0)
+        predicted_index = np.argmax(prediction[0])
+        confidence_score = prediction[0][predicted_index]
+        correct = predicted_index == true_label_index
+
+        # Store results
+        images.append(img_resized)
+        predictions.append(class_names[predicted_index])
+        true_labels.append(class_names[true_label_index])
+        is_correct.append(correct)
+        confidence_scores.append(confidence_score)
+
+    # Plot all images in the grid
+    for i in range(min(len(images), rows * cols)):
+        row_idx = i // cols
+        col_idx = i % cols
+
+        ax = fig.add_subplot(gs[row_idx, col_idx])
+        ax.imshow(images[i])
+        ax.axis("off")
+
+        # Create title with prediction info
+        title = f"True {prediction_type}: {true_labels[i]}\nPredicted {prediction_type}: {predictions[i]}\nConfidence: {confidence_scores[i]:.2f}"
+
+        # Set title color based on correctness
+        title_color = "green" if is_correct[i] else "red"
+        ax.set_title(title, color=title_color, fontsize=10)
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.3)
+    plt.show()
+
+    # Print summary
+    correct_count = sum(is_correct)
+    print(
+        f"Correctly predicted {correct_count} out of {len(images)} images ({correct_count/len(images)*100:.1f}%)"
+    )
 
 
 def evaluate_model(model, generator, model_name):
