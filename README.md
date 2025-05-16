@@ -6,9 +6,9 @@ This project uses machine learning techniques to classify paddy plant diseases f
 
 ```.
 .
-├── notebooks/                 # Notebooks directory
+├── images/                    # Project images & visualizations
 ├── inputs/                    # Dataset directory
-│   ├── training_df.csv        # Training dataset metadata
+│   ├── meta_train.csv         # Training dataset metadata
 │   ├── train_images/          # Training images
 │   └── test_images/           # Test images
 ├── models/                    # Saved model files
@@ -18,7 +18,15 @@ This project uses machine learning techniques to classify paddy plant diseases f
 │   ├── model_training.py      # Model training utilities
 │   ├── preprocessing.py       # Data preprocessing utilities
 │   └── visualizations.py      # Visualization utilities
-└── requirements.txt           # Python dependencies
+├── .gitignore                 # Git ignore file
+├── 00_main_notebook_eda.ipynb # Exploratory data analysis
+├── 01_task1_disease_classification.ipynb # Disease classification notebook
+├── 02_task2_variety_classification.ipynb # Variety classification notebook
+├── 03_task3_age_regression.ipynb # Age regression notebook
+├── 04_final_prediction.ipynb  # Final prediction notebook
+├── README.md                  # Project documentation
+├── requirements_tf2.10.txt    # Requirements for TensorFlow ≤2.12
+└── requirements.txt           # Requirements for TensorFlow ≥2.13
 ```
 
 ## Setup Instruction
