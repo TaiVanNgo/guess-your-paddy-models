@@ -23,6 +23,15 @@ from sklearn.metrics import (
     auc,
 )
 
+# Regression metrics
+from sklearn.metrics import (
+    mean_squared_error,
+    mean_absolute_error,
+    r2_score,
+)
+
+import matplotlib.gridspec as gridspec
+
 
 def save_sklearn_model(model, model_name, model_dir="models"):
     os.makedirs(model_dir, exist_ok=True)
@@ -402,3 +411,171 @@ def plot_model_results(model_results, title="Model Comparison", figsize=(12, 8))
     # Adjust layout
     plt.tight_layout()
     plt.show()
+
+def plot_regression_model_results(model_results, metric_name="MAE", title="Model Comparison", figsize=(12, 8)):
+    """
+    Plots training and validation regression metrics (like MAE, MSE) for multiple models side by side.
+
+    Parameters:
+    - model_results: Dictionary where keys are model names and values are tuples of (train_metric, val_metric)
+    - metric_name: Name of the metric for y-axis label and title
+    - title: Title for the plot
+    - figsize: Figure size as (width, height)
+    """
+
+    # Prepare data for plotting
+    data = []
+    for model_name, (train_metric, val_metric) in model_results.items():
+        data.append({"Model": model_name, metric_name: train_metric, "Type": "Training"})
+        data.append({"Model": model_name, metric_name: val_metric, "Type": "Validation"})
+
+    plot_df = pd.DataFrame(data)
+
+    plt.figure(figsize=figsize)
+    ax = sns.barplot(x="Model", y=metric_name, hue="Type", data=plot_df, palette="coolwarm")
+
+    # Add value labels on top of each bar
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.4f", padding=3)
+
+    plt.title(title, fontsize=16)
+    plt.ylabel(metric_name, fontsize=12)
+    # For regression metrics like MAE/MSE, lower is better, so set y-limit accordingly
+    min_metric = plot_df[metric_name].min()
+    max_metric = plot_df[metric_name].max()
+    margin = (max_metric - min_metric) * 0.1 if max_metric > min_metric else 1
+    plt.ylim(max(0, min_metric - margin), max_metric + margin)
+
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
+    plt.legend(title="", loc="upper right")
+    plt.xticks(rotation=45 if len(model_results) > 3 else 0)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def evaluate_model_regression(model, generator, model_name):
+    # Number of steps to cover the entire generator
+    steps = int(np.ceil(generator.samples / generator.batch_size))
+
+    # Collect true values and predictions
+    y_true = []
+    y_pred = []
+
+    for i in range(steps):
+        X_batch, y_batch = generator[i]
+        preds = model.predict(X_batch).flatten()
+
+        y_true.append(y_batch)
+        y_pred.append(preds)
+
+    y_true = np.concatenate(y_true).flatten()
+    y_pred = np.concatenate(y_pred).flatten()
+
+    # Calculate regression metrics
+    mse = mean_squared_error(y_true, y_pred)
+    mae = mean_absolute_error(y_true, y_pred)
+    r2 = r2_score(y_true, y_pred)
+
+    print(f"--- {model_name} Regression Evaluation ---")
+    print(f"Mean Squared Error (MSE): {mse:.4f}")
+    print(f"Mean Absolute Error (MAE): {mae:.4f}")
+    print(f"R² Score: {r2:.4f}\n")
+
+
+def predict_and_show_samples_regression(
+    model,
+    df,
+    num_samples=5,
+    random_select=True,
+    target_size=(128, 128),
+    figsize=(15, 10),
+    rows=None,
+    cols=None,
+    label_col="age",
+    prediction_type="Age",
+    is_resized=True,
+    error_tolerance=5.0,  # days error threshold for coloring
+):
+    """
+    Predict and visualize continuous regression outputs (e.g., age).
+
+    model: Trained regression model
+    df: DataFrame with 'image_path' and continuous label columns (e.g., age)
+    num_samples: Number of images to predict and show
+    random_select: Randomly select samples if True, else take first n
+    target_size: Image resize target size
+    figsize: Figure size for plotting
+    rows, cols: Grid layout, auto-calculated if None
+    label_col: Name of column holding continuous target values
+    prediction_type: Name of prediction type shown in title
+    is_resized: Whether to normalize image pixels by dividing by 255
+    error_tolerance: Threshold for coloring prediction as "good" or "bad"
+    """
+    selected_df = (
+        df.sample(n=num_samples).reset_index(drop=True)
+        if random_select
+        else df.head(num_samples).reset_index(drop=True)
+    )
+
+    if rows is None or cols is None:
+        cols = min(5, num_samples)
+        rows = math.ceil(num_samples / cols)
+
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(rows, cols, figure=fig)
+
+    images = []
+    predictions = []
+    true_labels = []
+    errors = []
+    good_prediction = []
+
+    for i, row in selected_df.iterrows():
+        img_path = row["image_path"]
+        true_value = row[label_col]
+
+        img = Image.open(img_path).convert("RGB")
+        img_resized = img.resize(target_size)
+
+        if is_resized:
+            img_array = np.array(img_resized) / 255.0
+        else:
+            img_array = np.array(img_resized)
+
+        img_batch = np.expand_dims(img_array, axis=0)
+
+        pred_value = model.predict(img_batch, verbose=0)[0][0]
+
+        error = abs(pred_value - true_value)
+        good = error <= error_tolerance
+
+        images.append(img_resized)
+        predictions.append(pred_value)
+        true_labels.append(true_value)
+        errors.append(error)
+        good_prediction.append(good)
+
+    for i in range(min(len(images), rows * cols)):
+        row_idx = i // cols
+        col_idx = i % cols
+
+        ax = fig.add_subplot(gs[row_idx, col_idx])
+        ax.imshow(images[i])
+        ax.axis("off")
+
+        title = (
+            f"True {prediction_type}: {true_labels[i]:.1f}\n"
+            f"Predicted {prediction_type}: {predictions[i]:.1f}\n"
+            f"Error: {errors[i]:.1f}"
+        )
+        title_color = "green" if good_prediction[i] else "red"
+        ax.set_title(title, color=title_color, fontsize=10)
+
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.3)
+    plt.show()
+
+    good_count = sum(good_prediction)
+    print(f"Predictions within ±{error_tolerance} days: {good_count} out of {len(images)} "
+          f"({good_count / len(images) * 100:.1f}%)")
