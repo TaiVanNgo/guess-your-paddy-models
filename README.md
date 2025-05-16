@@ -62,3 +62,17 @@ pip install -r requirements_tf2.10.txt
 ```
 
 4.Download the dataset and place it in the `inputs` directory or use the provided dataset.
+
+## Final Models for Predictions
+
+### Task 1: Disease Classification
+
+**Final Model**: ./models/vgg_best.keras
+
+### Task 2: Variety Classification
+
+**Final Model**: ./models/efficientnet_final.keras
+
+### Task 3: Age Regression
+
+**Final Model**: ./models/resnet50v2_best_model.keras
