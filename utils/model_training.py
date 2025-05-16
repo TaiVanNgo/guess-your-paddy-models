@@ -63,6 +63,7 @@ def predict_and_show_samples(
     cols=None,
     label_col="label",
     prediction_type="Disease",
+    is_resized=True,
 ):
     """
     Predict and check correctness for images
@@ -81,7 +82,7 @@ def predict_and_show_samples(
     """
     if isinstance(class_names, tuple):
         class_names = list(class_names)
-    
+
     selected_df = (
         df.sample(n=num_samples).reset_index(drop=True)
         if random_select
@@ -114,7 +115,12 @@ def predict_and_show_samples(
         # Load & process images
         img = Image.open(img_path).convert("RGB")
         img_resized = img.resize(target_size)
-        img_array = np.array(img_resized) / 255.0
+
+        if is_resized:
+            img_array = np.array(img_resized) / 255.0
+        else:
+            img_array = np.array(img_resized)
+
         img_batch = np.expand_dims(img_array, axis=0)
 
         # Predictions
