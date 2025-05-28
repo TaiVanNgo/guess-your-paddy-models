@@ -58,7 +58,7 @@ Whether you're building AI-powered crop diagnostic tools or benchmarking CNN mod
 Due to GitHub file size limitations, the full dataset and final trained models are hosted on OneDrive:
 
 - 🔗 **[Download Models (.keras)](https://rmiteduau-my.sharepoint.com/:u:/g/personal/s3974892_rmit_edu_vn/EWxSvxikHoZIsf-Tgo5IujkBHE9WyciexSFyMs703t-PSw?e=SkljHF)**  
-- 🔗 **[Download Dataset (train/test images + meta CSV)](https://your-onedrive-link/dataset)**
+- 🔗 **[Download Dataset (train/test images + meta CSV)](https://rmiteduau-my.sharepoint.com/:u:/g/personal/s3974892_rmit_edu_vn/EUkoc-UYvH5GhDd2RG3dgWYBArESgj_gSWf7_Q0BDy6ZPQ?e=9A4yHH)**
 
 > ⚠️ Ensure you download and place the files into the correct folder paths as shown in the structure above (`inputs/` and `models/`).
 
